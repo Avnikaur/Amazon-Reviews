@@ -4,9 +4,9 @@ import os
 import sys
 import pandas
 import flatten_json
-
 sys.path.append("etl_lib")
 import etl_lib
+
 amazon_reviews ="/Volumes/My Passport/BU - Data warehousing/datasets/AmazonReviews"
 top_level_keys =[u'Reviews', u'ProductInfo']
 review_keys =[u'Author', u'ReviewID', u'Overall', u'Content', u'Title', u'Date']
@@ -24,22 +24,18 @@ for category in category_list:
  file_list = [fl for fl in os.listdir(full_dir_path) if fl != '.DS_Store']
  for fl in file_list:
     try:
-     
      with open(full_dir_path + "/" + fl) as f:
       data = f.read()
       jsondata = json.loads(data)
-
-
       for row in jsondata:
           # Pull the product info first
           #Notice the use of string to deal with None return values in case lookup of column fails
           product_info="@".join([jsondata['ProductInfo'][key] or '' for key in product_keys])
-     
           number_reviews = len(jsondata['Reviews'])
           for i in range(number_reviews):
               review = jsondata['Reviews'][i]
               review_info="@".join([review[key] or '' for key in review_keys])
-      #use * as record terminator
+              #use * as record terminator
               sys.stdout.write(category + "@" + product_info + "@" + review_info + "*")
     except:
         exception_log.write(str(sys.exc_info()[0]) + "\n")
