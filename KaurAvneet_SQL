@@ -1,10 +1,7 @@
-
-
 --TABLES CREATION AND INSERTION 
 
 
 --DIMENSIONS
-
 
 --1) AUTHOR DIMENSION
 drop table amazon_reviews.author_dimension;
@@ -14,7 +11,7 @@ ReviewAuthor varchar(200) primary key);
 
 select * from amazon_reviews.author_dimension;
 
-
+--CREATING SEQUENCE
 drop sequence amazon_reviews.author_sequence
 create sequence amazon_reviews.author_sequence
 start with 1
@@ -25,8 +22,6 @@ no cycle
 no cache 
 
 select amazon_reviews.author_sequence.nextval;
-
-
 
 
 --AuthorID ranging from 10,100,1000,10000,....100000 ,.....99999
@@ -40,7 +35,7 @@ drop view AuthorName;
 
 select count(*) from amazon_reviews.author_dimension;
 
-
+--INSERTING DATA
 Insert into amazon_reviews.author_dimension(ReviewAuthor) 
 select distinct ReviewAuthor FROM amazon_reviews.product_reviews
 where ReviewAuthor is not null
@@ -57,6 +52,7 @@ having count(distinct ReviewAuthor)>1
 --2) DATE DIMENSION 
 Drop table amazon_reviews.date_dimension;
 
+--CREATING TABLE
 create table amazon_reviews.date_dimension(
 ReviewDate date primary key,
 Day varchar(10),
@@ -70,10 +66,9 @@ Year varchar(10)
 
 Select * from amazon_reviews.date_dimension;
 
-
-
 drop sequence amazon_reviews.date_sequence;
 
+--CREATING SEQUENCE
 create sequence amazon_reviews.date_sequence
 start with 1
 increment by 1
@@ -86,8 +81,8 @@ no cache
 
 select amazon_reviews.date_sequence.nextval;
 
-
-  CREATE OR REPLACE FUNCTION month_name_case(month INT) RETURN VARCHAR(10)
+--CREATING FUNCTION
+CREATE OR REPLACE FUNCTION month_name_case(month INT) RETURN VARCHAR(10)
   AS BEGIN
     RETURN (CASE
       WHEN (month = 1)  THEN 'January'
@@ -131,17 +126,14 @@ CREATE OR REPLACE FUNCTION quarter_name_case(quarter INT) RETURN VARCHAR(10)
 
 select quarter_name_case(quarter(ReviewDate)) from amazon_reviews.product_reviews;
 
-
-      
+--INSERTING DATA
 Insert into amazon_reviews.date_dimension( ReviewDate, Day, Day_of_Week, Month, Month_Name, Quarter, Quarter_Name, Year)
 select distinct ReviewDate, date_part('Day', ReviewDate), date_part('Week', ReviewDate), date_part('Month', ReviewDate), 
 month_name_case(month(ReviewDate)), date_part('Quarter', ReviewDate), quarter_name_case(quarter(ReviewDate)), date_part('Year', ReviewDate)
 from amazon_reviews.product_reviews;
 
 
-
 select count(*) from amazon_reviews.date_dimension 
-
 
 select count(distinct ReviewDate) from amazon_reviews.date_dimension
 group by ReviewDate
@@ -155,6 +147,7 @@ having count(distinct ReviewDate)>1
 --3) PRODUCT DIMENSION
 drop table amazon_reviews.product_dimension
 
+--CREATING TABLE
 create table amazon_reviews.product_dimension(
 ProductID varchar(100) primary key ,
 ProductPrice varchar(100),
@@ -167,20 +160,14 @@ ProductName varchar(400));
 select * from amazon_reviews.product_dimension;
 
 
-
-
+--INSERTING DATA
 Insert into amazon_reviews.product_dimension (ProductID, ProductPrice, ProductFeatures, ProductCategory, ProductImgURL, ProductName) 
 select distinct ProductID, ProductPrice, ProductFeatures, ProductCategory, ProductImgURL, ProductName
 from amazon_reviews.product_reviews
 order by ProductName asc;
 
 
-
-
 select count(*) from amazon_reviews.product_dimension
-
-
-
 
 
 
@@ -190,6 +177,7 @@ select count(*) from amazon_reviews.product_dimension
 
 drop table amazon_reviews.amazon_facts;
 
+--CREATING TABLE
 create table amazon_reviews.amazon_facts(
 ProductID varchar(100),
 ReviewAuthor varchar(200),
@@ -210,26 +198,20 @@ add foreign key(ReviewDate) references amazon_reviews.date_dimension(ReviewDate)
 Alter table amazon_reviews.amazon_facts
 add foreign key(ReviewAuthor) references amazon_reviews.author_dimension(ReviewAuthor)
 
- 
+--INSERTING DATA
 Insert into amazon_reviews.amazon_facts( ReviewAuthor,ProductID, ReviewID, ReviewDate, ReviewOverallRating, ProductPrice)
 select distinct ReviewAuthor, ProductID, ReviewID, ReviewDate, ReviewOverallRating, ProductPrice
 from amazon_reviews.product_reviews
  
 
-
-
 select count(*) FROM amazon_reviews.amazon_facts;
-
-
-
-
-
 
 
 
 --OTHER
 
--- This query shows that the prices do not vary for the same amazon product 
+
+-- This query shows that prices do not vary for the same amazon product 
 select count(distinct productprice) ,productname, productprice from amazon_reviews.product_reviews 
 group by  productname, productprice
 having productPrice != 'Unavailable' 
@@ -238,35 +220,22 @@ count(distinct productprice) > 1
 order by productname
 limit 1000
 
-
-
-
 select ProductName, count(distinct ProductCategory) from amazon_reviews.product_dimension
 group by ProductName
 having count(distinct ProductCategory)>1
 
-
-
-
 select ProductID , count(distinct ProductName) from amazon_reviews.product_dimension
 group by ProductID
 having count(distinct ProductName)>1
-
-
 
 --To show that the different products can have the same feature
 select ProductFeatures, count(distinct ProductName) from amazon_reviews.product_dimension 
 group by ProductFeatures
 having count(distinct ProductName)>1
 
-
-
 select count(ReviewAuthor) from amazon_reviews.amazon_facts
 group by ReviewAuthor
 having count(ReviewAuthor)>1
-
-
-
 
 --This query shows the different month names included in the ReviewDate
 select * from amazon_reviews.month_names;
@@ -274,19 +243,15 @@ select * from amazon_reviews.month_names;
 --This query shows the oldest and latest ReviewDate
 select count(*), min(ReviewDate), max(ReviewDate) from amazon_reviews.product_reviews;
 
-
 -- To view all tables names in VMart Database
 SELECT * FROM v_catalog.tables 
-
 
 --To view all tables from the 'amazon_reviews' schema
 SELECT * FROM v_catalog.tables  WHERE table_schema = 'amazon_reviews'
 
-
 --To view different objects from 'amazon_reviews.product_reviews' table
 SELECT table_schema, table_name, column_name, data_type FROM columns WHERE table_schema = 'amazon_reviews' and table_name = 'product_reviews'
  
-
 select ReviewOverallRating from  amazon_reviews.product_reviews where ReviewOverallRating like '%Although this is the first smart phone I have owned, I am very happy. Has %'
 
 
